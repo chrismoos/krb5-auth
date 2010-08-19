@@ -363,7 +363,7 @@ static VALUE Krb5_change_password(VALUE self, VALUE v_old, VALUE v_new)
     &pw_res_string,
     &res_string    
   );
-
+  
   // 0 is success. Anything else is failure.
 
   if(krbret){
@@ -372,10 +372,30 @@ static VALUE Krb5_change_password(VALUE self, VALUE v_old, VALUE v_new)
   }
 
   if(pw_result){
-    Krb5_register_error(pw_result);
+    switch(pw_result) {
+      case KRB5_KPASSWD_MALFORMED:
+        rb_raise(cKrb5_Exception, "Request Packet Incorrect");
+      break;
+      
+      case KRB5_KPASSWD_HARDERROR:
+        rb_raise(cKrb5_Exception, "Password Server Error");
+      break;
+      
+      case KRB5_KPASSWD_AUTHERROR:
+        rb_raise(cKrb5_Exception, "Authentication Error");
+      break;
+      
+      case KRB5_KPASSWD_SOFTERROR:
+        rb_raise(cKrb5_Exception, "Password change rejected");
+      break;
+      
+      default:
+        rb_raise(cKrb5_Exception, "Unknown error, code: %d", pw_result);
+      break;
+    }
+
     return Qfalse; 
   }
-
   return Qtrue;
 }
 
